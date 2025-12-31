@@ -1,0 +1,16 @@
+[
+{
+  "modid": "chatemojis",
+  "name": "Chat Emojis",
+  "description": "Emojis anywhere, in Minecraft!",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "https://github.com/dooji2/chat-emojis",
+  "updateUrl": "",
+  "authorList": ["dooji"],
+  "credits": "",
+  "logoFile": "assets/chatemojis/logo.png",
+  "screenshots": [],
+  "dependencies": []
+}
+]
