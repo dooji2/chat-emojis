@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IReloadableResourceManager;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.client.resources.IResourceManagerReloadListener;
+import net.minecraftforge.common.MinecraftForge;
 
 public class ClientProxy extends CommonProxy {
     @Override
@@ -17,11 +18,15 @@ public class ClientProxy extends CommonProxy {
         super.init();
         Minecraft minecraft = Minecraft.getMinecraft();
         minecraft.fontRenderer = new EmojiFontRenderer(minecraft.fontRenderer);
+        MinecraftForge.EVENT_BUS.register(new GuiChatHandler());
         ((IReloadableResourceManager) minecraft.getResourceManager()).registerReloadListener(new IResourceManagerReloadListener() {
                     @Override
                     public void onResourceManagerReload(IResourceManager resourceManager) {
-                        EmojiResourceManager.clearCache();
+                        EmojiHelper.clearCache();
+                        EmojiAutocomplete.refresh();
                     }
         });
+
+        EmojiAutocomplete.refresh();
     }
 }

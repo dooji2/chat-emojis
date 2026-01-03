@@ -2,9 +2,7 @@ package com.dooji.chatemojis.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,59 +27,21 @@ public class EmojiFontRenderer extends FontRenderer {
         Matcher matcher = EMOJI_PATTERN.matcher(text);
         int currentX = x;
         int lastEnd = 0;
-        int appliedColor = color;
 
-        if ((appliedColor & -67108864) == 0) {
-            appliedColor |= -16777216;
-        }
-
-        if (dropShadow) {
-            appliedColor = (appliedColor & 16579836) >> 2 | appliedColor & -16777216;
-        }
+        original.drawString("", currentX, y, color, dropShadow);
 
         while (matcher.find()) {
             String emojiName = matcher.group(1);
-            if (EmojiResourceManager.hasEmoji(emojiName)) {
+            if (EmojiHelper.hasEmoji(emojiName)) {
                 String before = text.substring(lastEnd, matcher.start());
-                currentX = original.drawString(before, currentX, y, color, dropShadow);
+                if (!before.isEmpty()) {
+                    currentX = original.drawString(before, currentX, y, color, dropShadow);
+                }
 
-                ResourceLocation texture = EmojiResourceManager.getEmojiTexture(emojiName);
+                ResourceLocation texture = EmojiHelper.getEmojiTexture(emojiName);
                 if (texture != null) {
-                    boolean wasBlendEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
-                    int prevBlendSrc = GL11.glGetInteger(GL11.GL_BLEND_SRC);
-                    int prevBlendDst = GL11.glGetInteger(GL11.GL_BLEND_DST);
-
-                    Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
-                    GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-
-                    double zLevel = 0;
-
-                    GL11.glEnable(GL11.GL_BLEND);
-                    GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-                    GL11.glPushMatrix();
-                    GL11.glTranslated(currentX, y + 1, 0);
-
-                    Tessellator tessellator = Tessellator.instance;
-                    tessellator.startDrawingQuads();
-                    tessellator.addVertexWithUV(0, 8, zLevel, 0, 1);
-                    tessellator.addVertexWithUV(8, 8, zLevel, 1, 1);
-                    tessellator.addVertexWithUV(8, 0, zLevel, 1, 0);
-                    tessellator.addVertexWithUV(0, 0, zLevel, 0, 0);
-                    tessellator.draw();
-
-                    GL11.glPopMatrix();
-                    GL11.glBlendFunc(prevBlendSrc, prevBlendDst);
-
-                    if (!wasBlendEnabled) {
-                        GL11.glDisable(GL11.GL_BLEND);
-                    }
-
-                    GL11.glColor4f(
-                        (float)(appliedColor >> 16 & 255) / 255.0F,
-                        (float)(appliedColor >> 8 & 255) / 255.0F,
-                        (float)(appliedColor & 255) / 255.0F,
-                        (float)(appliedColor >> 24 & 255) / 255.0F);
-
+                    EmojiHelper.renderEmojiIcon(texture, currentX, y + 1, 8);
+                    original.drawString("", currentX, y, color, dropShadow);
                     currentX += 10;
                 }
 
@@ -106,7 +66,7 @@ public class EmojiFontRenderer extends FontRenderer {
 
         while (matcher.find()) {
             String emojiName = matcher.group(1);
-            if (EmojiResourceManager.hasEmoji(emojiName)) {
+            if (EmojiHelper.hasEmoji(emojiName)) {
                 width += original.getStringWidth(text.substring(lastEnd, matcher.start()));
                 width += 10;
                 lastEnd = matcher.end();
@@ -118,6 +78,37 @@ public class EmojiFontRenderer extends FontRenderer {
         }
 
         return width;
+    }
+
+    @Override
+    public String trimStringToWidth(String text, int width) {
+        return trimStringToWidth(text, width, false);
+    }
+
+    @Override
+    public String trimStringToWidth(String text, int width, boolean reverse) {
+        if (text == null) return "";
+
+        StringBuilder builder = new StringBuilder();
+        if (reverse) {
+            for (int i = text.length() - 1; i >= 0; i--) {
+                builder.insert(0, text.charAt(i));
+                if (getStringWidth(builder.toString()) > width) {
+                    builder.deleteCharAt(0);
+                    break;
+                }
+            }
+        } else {
+            for (int i = 0; i < text.length(); i++) {
+                builder.append(text.charAt(i));
+                if (getStringWidth(builder.toString()) > width) {
+                    builder.deleteCharAt(builder.length() - 1);
+                    break;
+                }
+            }
+        }
+
+        return builder.toString();
     }
 
     @Override
